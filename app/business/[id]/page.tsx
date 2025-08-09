@@ -47,6 +47,9 @@ function BusinessPage({ id }: { id: string }) {
   const [isOwner, setIsOwner] = useState(false);
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
 
+  // API URL with fallback
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
   // Load business data
   useEffect(() => {
     const controller = new AbortController();
@@ -54,7 +57,7 @@ function BusinessPage({ id }: { id: string }) {
     async function load() {
       try {
         setLoading(true);
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}`;
+        const url = `${apiUrl}/businesses/${id}`;
         const res = await fetch(url, {
           cache: "no-store",
           signal: controller.signal,
@@ -72,13 +75,13 @@ function BusinessPage({ id }: { id: string }) {
 
     load();
     return () => controller.abort();
-  }, [id]);
+  }, [id, apiUrl]);
 
   // Load gallery images
   useEffect(() => {
     async function loadImages() {
       try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/images`);
+      const res = await fetch(`${apiUrl}/businesses/${id}/images`);
         if (res.ok) {
           const images = await res.json();
           setGalleryImages(images);
@@ -88,13 +91,13 @@ function BusinessPage({ id }: { id: string }) {
       }
     }
     if (business) loadImages();
-  }, [id, business]);
+  }, [id, business, apiUrl]);
 
   // Load business hours
   useEffect(() => {
     async function loadHours() {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/hours`);
+        const res = await fetch(`${apiUrl}/businesses/${id}/hours`);
         if (res.ok) {
           const hours = await res.json();
           setBusinessHours(hours);
@@ -104,7 +107,7 @@ function BusinessPage({ id }: { id: string }) {
       }
     }
     if (business) loadHours();
-  }, [id, business]);
+  }, [id, business, apiUrl]);
 
   // Check if user is owner
   useEffect(() => {
@@ -114,7 +117,7 @@ function BusinessPage({ id }: { id: string }) {
         return;
       }
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/owner-check`, {
+        const res = await fetch(`${apiUrl}/businesses/${id}/owner-check`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -126,13 +129,13 @@ function BusinessPage({ id }: { id: string }) {
       }
     }
     checkOwner();
-  }, [id, user, token]);
+  }, [id, user, token, apiUrl]);
 
   // Helper function to get full image URL
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `${process.env.NEXT_PUBLIC_API_URL}${imagePath}`;
+    return `${apiUrl}${imagePath}`;
   };
 
   // Image carousel navigation
@@ -155,7 +158,7 @@ function BusinessPage({ id }: { id: string }) {
     const formData = new FormData();
     formData.append("image", e.target.files[0]);
     try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/images`, {
+    const res = await fetch(`${apiUrl}/businesses/${id}/images`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
@@ -175,7 +178,7 @@ function BusinessPage({ id }: { id: string }) {
   async function handleDeleteImage(imageId: number) {
     if (!token) return;
     try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/images/${imageId}`, {
+    const res = await fetch(`${apiUrl}/businesses/${id}/images/${imageId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

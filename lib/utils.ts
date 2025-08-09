@@ -104,9 +104,29 @@ export function getCategoryIcon(category: string): string {
   return icons[category] || '🏪';
 }
 
-// Get location icon - removed unused parameter
-export function getLocationIcon(): string {
-  return '📍';
+// Get location icon
+export function getLocationIcon(location?: string): string {
+  if (!location) return '📍';
+  
+  const icons: Record<string, string> = {
+    'San Francisco': '🌉',
+    'Oakland': '🌁',
+    'Berkeley': '🎓',
+    'Palo Alto': '💻',
+    'Mountain View': '🚀',
+    'San Jose': '🍎',
+    'Fremont': '🏭',
+    'Hayward': '🌊',
+    'Concord': '🏔️',
+    'Richmond': '🌉',
+    'Sunnyvale': '☀️',
+    'Santa Clara': '🎅',
+    'San Mateo': '🌊',
+    'Dublin': '🍀',
+    'Livermore': '🍷',
+  };
+
+  return icons[location] || '📍';
 }
 
 // Define expected structure for a business object

@@ -19,10 +19,6 @@ export default function HomePage({ businesses }: HomePageProps) {
     b.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
-
-  console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-
   return (
     <main className="overflow-x-hidden bg-gradient-to-b from-neutral-950 to-neutral-900 text-white">
       {/* Hero Section */}

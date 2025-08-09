@@ -2,7 +2,8 @@ import HomePage from "@/components/HomePage";
 import { Business } from "@/types/business";
 
 async function getBusinesses(): Promise<Business[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses`, {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const res = await fetch(`${apiUrl}/businesses`, {
     cache: "no-store",
   });
   return res.json();

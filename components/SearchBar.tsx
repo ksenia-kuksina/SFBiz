@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, TrendingUp, MapPin, Building2 } from 'lucide-react';
 import { SearchSuggestion } from '@/lib/api';
 
 // Properly typed debounce implementation
-function debounce<F extends (...args: any[]) => any>(
+function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
   func: F,
   wait: number
 ): (...args: Parameters<F>) => void {
@@ -48,23 +48,26 @@ export default function SearchBar({
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Create debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.trim().length < 2) return;
-      try {
-        // Add your suggestion fetching logic here
-      } catch (error) {
-        console.error('Failed to fetch suggestions:', error);
-      }
-    }, 300),
-    []
+  const debouncedSearch = useCallback((query: string) => {
+    if (query.trim().length < 2) return;
+    try {
+      // Add your suggestion fetching logic here
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error);
+    }
+  }, []);
+
+  // Debounced version of the search
+  const debouncedSearchWithDelay = useMemo(
+    () => debounce(debouncedSearch, 300),
+    [debouncedSearch]
   );
 
   useEffect(() => {
     if (value) {
-      debouncedSearch(value);
+      debouncedSearchWithDelay(value);
     }
-  }, [value, debouncedSearch]);
+  }, [value, debouncedSearchWithDelay]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

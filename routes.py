@@ -165,14 +165,7 @@ def search_businesses():
             where_conditions.append(f"b.location IN ({placeholders})")
             params.extend(locations)
         
-        # Add rating filter
-        if min_rating:
-            where_conditions.append("COALESCE(AVG(r.rating), 0) >= ?")
-            params.append(float(min_rating))
-        
-        if max_rating:
-            where_conditions.append("COALESCE(AVG(r.rating), 0) <= ?")
-            params.append(float(max_rating))
+        # Rating filters will be handled in HAVING clause after GROUP BY
         
         # Combine WHERE conditions
         if where_conditions:
@@ -251,13 +244,12 @@ def search_businesses():
         locations_cursor = conn.execute("SELECT DISTINCT location FROM businesses")
         available_locations = [row["location"] for row in locations_cursor.fetchall()]
         
-        # Get rating range
+        # Get rating range - simplified approach
         rating_cursor = conn.execute("""
-            SELECT MIN(COALESCE(AVG(r.rating), 0)) as min_rating, 
-                   MAX(COALESCE(AVG(r.rating), 0)) as max_rating
-            FROM businesses b
-            LEFT JOIN reviews r ON b.id = r.business_id
-            GROUP BY b.id
+            SELECT 
+                COALESCE(MIN(r.rating), 0) as min_rating,
+                COALESCE(MAX(r.rating), 5) as max_rating
+            FROM reviews r
         """)
         rating_range = rating_cursor.fetchone()
         
@@ -342,13 +334,12 @@ def get_filter_options():
         locations_cursor = conn.execute("SELECT DISTINCT location FROM businesses")
         locations = [row["location"] for row in locations_cursor.fetchall()]
         
-        # Get rating range
+        # Get rating range - simplified approach
         rating_cursor = conn.execute("""
-            SELECT MIN(COALESCE(AVG(r.rating), 0)) as min_rating, 
-                   MAX(COALESCE(AVG(r.rating), 0)) as max_rating
-            FROM businesses b
-            LEFT JOIN reviews r ON b.id = r.business_id
-            GROUP BY b.id
+            SELECT 
+                COALESCE(MIN(r.rating), 0) as min_rating,
+                COALESCE(MAX(r.rating), 5) as max_rating
+            FROM reviews r
         """)
         rating_range = rating_cursor.fetchone()
         
@@ -659,4 +650,125 @@ def set_business_hours(biz_id):
         
         conn.commit()
         return jsonify({"message": "Business hours updated successfully"}), 200
+
+@bp.route("/auth/register", methods=["POST"])
+def register():
+    """Register a new user"""
+    data = request.get_json(force=True)
+    email = data.get("email")
+    password = data.get("password")
+    
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+    
+    if len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters long"}), 400
+    
+    try:
+        with get_db() as conn:
+            # Check if user already exists
+            existing_user = conn.execute(
+                "SELECT id FROM users WHERE email = ?", 
+                (email,)
+            ).fetchone()
+            
+            if existing_user:
+                return jsonify({"error": "User with this email already exists"}), 409
+            
+            # Hash password and create user
+            password_hash = hash_password(password)
+            cursor = conn.execute(
+                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+                (email, password_hash)
+            )
+            user_id = cursor.lastrowid
+            
+            # Generate token
+            token = generate_token(user_id, email)
+            
+            # Return user data and token
+            user_data = {
+                "id": user_id,
+                "email": email
+            }
+            
+            return jsonify({
+                "user": user_data,
+                "token": token,
+                "message": "User registered successfully"
+            }), 201
+            
+    except Exception as e:
+        print(f"Registration error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@bp.route("/auth/login", methods=["POST"])
+def login():
+    """Login user"""
+    data = request.get_json(force=True)
+    email = data.get("email")
+    password = data.get("password")
+    
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+    
+    try:
+        with get_db() as conn:
+            # Get user by email
+            user = conn.execute(
+                "SELECT id, email, password_hash FROM users WHERE email = ?", 
+                (email,)
+            ).fetchone()
+            
+            if not user:
+                return jsonify({"error": "Invalid email or password"}), 401
+            
+            # Verify password
+            if not verify_password(password, user["password_hash"]):
+                return jsonify({"error": "Invalid email or password"}), 401
+            
+            # Generate token
+            token = generate_token(user["id"], user["email"])
+            
+            # Return user data and token
+            user_data = {
+                "id": user["id"],
+                "email": user["email"]
+            }
+            
+            return jsonify({
+                "user": user_data,
+                "token": token,
+                "message": "Login successful"
+            }), 200
+            
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@bp.route("/auth/me", methods=["GET"])
+@require_auth
+def get_current_user():
+    """Get current user information"""
+    try:
+        with get_db() as conn:
+            user = conn.execute(
+                "SELECT id, email, created_at FROM users WHERE id = ?", 
+                (request.user_id,)
+            ).fetchone()
+            
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+            
+            user_data = {
+                "id": user["id"],
+                "email": user["email"],
+                "created_at": user["created_at"]
+            }
+            
+            return jsonify(user_data), 200
+            
+    except Exception as e:
+        print(f"Get user error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 

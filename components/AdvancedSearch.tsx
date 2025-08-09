@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SearchFilters, SearchResult, SearchResponse } from '@/lib/api';
+import { SearchFilters, SearchResult, SearchResponse, SearchSuggestion } from '@/lib/api';
 import { updateSearchParams, parseSearchParams } from '@/lib/utils';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import SearchBar from './SearchBar';
@@ -29,7 +29,7 @@ export default function AdvancedSearch({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [suggestions] = useState<any[]>([]);
+  const [suggestions] = useState<SearchSuggestion[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 

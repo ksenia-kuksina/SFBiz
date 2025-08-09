@@ -9,7 +9,6 @@ import {
   Upload, 
   X, 
   Plus, 
-  MapPin, 
   Camera, 
   Globe, 
   Phone, 
@@ -89,7 +88,7 @@ export default function AddPage() {
   const [currentServiceInput, setCurrentServiceInput] = useState<string>("");
   const [servicesList, setServicesList] = useState<string[]>([]);
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>(defaultHours);
-  const [servicePricing, setServicePricing] = useState<{ [key: string]: any }>({});
+  const [servicePricing] = useState<Record<string, unknown>>({});
   
   const router = useRouter();
   const { token, user } = useAuth();
@@ -195,9 +194,12 @@ export default function AddPage() {
     setError(null);
     setSuccess(null);
     
+    // API URL with fallback
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    
     try {
       // 1. Create the business
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses`, {
+      const res = await fetch(`${apiUrl}/businesses`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -223,7 +225,7 @@ export default function AddPage() {
       if (mainImage) {
         const mainImageFormData = new FormData();
         mainImageFormData.append("image", mainImage);
-        const mainImgRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/images`, {
+        const mainImgRes = await fetch(`${apiUrl}/businesses/${id}/images`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: mainImageFormData,
@@ -232,7 +234,7 @@ export default function AddPage() {
         
         // Update business with main image URL
         const mainImageData = await mainImgRes.json();
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}`, {
+        await fetch(`${apiUrl}/businesses/${id}`, {
           method: "PATCH",
           headers: { 
             "Content-Type": "application/json",
@@ -247,7 +249,7 @@ export default function AddPage() {
         for (const img of galleryImages) {
           const formData = new FormData();
           formData.append("image", img);
-          const imgRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${id}/images`, {
+          const imgRes = await fetch(`${apiUrl}/businesses/${id}/images`, {
       method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: formData,

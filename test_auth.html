@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Test - SFBiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .success {
+            background: rgba(46, 204, 113, 0.2);
+            border-color: rgba(46, 204, 113, 0.5);
+        }
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border-color: rgba(231, 76, 60, 0.5);
+        }
+        .user-info {
+            background: rgba(52, 152, 219, 0.2);
+            border-color: rgba(52, 152, 219, 0.5);
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            border-bottom-color: #ff6b6b;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 SFBiz Authentication Test</h1>
+        <p>Test the registration and login functionality</p>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('register')">Register</div>
+            <div class="tab" onclick="showTab('login')">Login</div>
+            <div class="tab" onclick="showTab('profile')">Profile</div>
+        </div>
+        
+        <!-- Register Tab -->
+        <div id="register" class="tab-content active">
+            <h2>Create Account</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regEmail">Email:</label>
+                    <input type="email" id="regEmail" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password:</label>
+                    <input type="password" id="regPassword" required placeholder="Enter password (min 8 chars)">
+                </div>
+                <button type="submit">Register</button>
+            </form>
+            <div id="registerResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- Login Tab -->
+        <div id="login" class="tab-content">
+            <h2>Sign In</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter your password">
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            <div id="loginResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <!-- Profile Tab -->
+        <div id="profile" class="tab-content">
+            <h2>User Profile</h2>
+            <div id="profileInfo" class="result user-info" style="display: none;">
+                <h3>Current User:</h3>
+                <div id="userDetails"></div>
+            </div>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5001';
+        let currentUser = null;
+        let currentToken = null;
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function showResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.style.display = 'block';
+        }
+
+        function updateProfile() {
+            if (currentUser && currentToken) {
+                document.getElementById('profileInfo').style.display = 'block';
+                document.getElementById('userDetails').innerHTML = `
+                    <p><strong>ID:</strong> ${currentUser.id}</p>
+                    <p><strong>Email:</strong> ${currentUser.email}</p>
+                    <p><strong>Token:</strong> ${currentToken.substring(0, 50)}...</p>
+                `;
+            } else {
+                document.getElementById('profileInfo').style.display = 'none';
+            }
+        }
+
+        // Register form handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('registerResult', `✅ Registration successful! User ID: ${data.user.id}`, true);
+                    // Auto-fill login form
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginPassword').value = password;
+                } else {
+                    showResult('registerResult', `❌ Registration failed: ${data.error}`, false);
+                }
+            } catch (error) {
+                showResult('registerResult', `❌ Network error: ${error.message}`, false);
+            }
+        });
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('loginResult', `✅ Login successful! Welcome, ${data.user.email}`, true);
+                    
+                    // Store user data
+                    currentUser = data.user;
+                    currentToken = data.token;
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('token', data.token);
+                    
+                    // Update profile
+                    updateProfile();
+                    
+                    // Switch to profile tab
+                    showTab('profile');
+                } else {
+                    showResult('loginResult', `❌ Login failed: ${data.error}`, false);
+                }
+            } catch (error) {
+                showResult('loginResult', `❌ Network error: ${error.message}`, false);
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            currentToken = null;
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            updateProfile();
+            showResult('loginResult', '✅ Logged out successfully', true);
+        }
+
+        // Check for existing session on page load
+        window.addEventListener('load', () => {
+            const storedUser = localStorage.getItem('user');
+            const storedToken = localStorage.getItem('token');
+            
+            if (storedUser && storedToken) {
+                currentUser = JSON.parse(storedUser);
+                currentToken = storedToken;
+                updateProfile();
+            }
+        });
+    </script>
+</body>
+</html> 
