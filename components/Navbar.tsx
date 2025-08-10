@@ -49,7 +49,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* mobile */}
+        {/* mobile  ✅*/}
         <button
           onClick={() => setOpen((o) => !o)}
           aria-label="Toggle menu"
