@@ -48,7 +48,7 @@ function BusinessPage({ id }: { id: string }) {
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
 
   // API URL with fallback
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
   // Load business data
   useEffect(() => {

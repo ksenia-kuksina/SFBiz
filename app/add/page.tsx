@@ -195,7 +195,7 @@ export default function AddPage() {
     setSuccess(null);
     
     // API URL with fallback
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
     
     try {
       // 1. Create the business

@@ -2,11 +2,22 @@ import HomePage from "@/components/HomePage";
 import { Business } from "@/types/business";
 
 async function getBusinesses(): Promise<Business[]> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-  const res = await fetch(`${apiUrl}/businesses`, {
-    cache: "no-store",
-  });
-  return res.json();
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+    const res = await fetch(`${apiUrl}/businesses`, {
+      cache: "no-store",
+    });
+    
+    if (!res.ok) {
+      console.error(`Failed to fetch businesses: ${res.status} ${res.statusText}`);
+      return [];
+    }
+    
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching businesses:", error);
+    return [];
+  }
 }
 
 export default async function Page() {
