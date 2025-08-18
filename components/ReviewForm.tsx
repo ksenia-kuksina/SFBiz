@@ -32,7 +32,7 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if user is authenticated
+    // Check if user is authenticated ✅
     if (!user) {
       setError("You must be logged in to submit a review");
       return;
